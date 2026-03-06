@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Slide with Arrows</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #1a1a2e, #16213e, #0f3460);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 20px;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* TITLE */
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+            animation: glow 3s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+            to { text-shadow: 0 0 40px rgba(102, 126, 234, 0.6); }
+        }
+
+        /* SLIDESHOW CONTAINER */
+        .slideshow {
+            position: relative;
+            width: 100%;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            background: #0a0a1a;
+            aspect-ratio: 21 / 9;
+        }
+
+        /* SLIDE TRACK - AUTO ANIMATION */
+        .slide-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        /* INDIVIDUAL SLIDE */
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a1a;
+        }
+
+        /* IMAGE - FULL VISIBILITY, NO ZOOM */
+        .slide img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 10px;
+        }
+
+        /* CAPTION - BEAUTIFUL OVERLAY */
+        .slide-caption {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 500;
+            padding: 12px 40px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            letter-spacing: 2px;
+            white-space: nowrap;
+            animation: captionGlow 2s infinite alternate;
+        }
+
+        @keyframes captionGlow {
+            from { background: rgba(0, 0, 0, 0.6); }
+            to { background: rgba(102, 126, 234, 0.4); }
+        }
+
+        /* NAVIGATION ARROWS */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 40;
+            opacity: 0.7;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(102, 126, 234, 0.7);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-50%) scale(1.1);
+            opacity: 1;
+        }
+
+        .nav-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .nav-arrow.prev {
+            left: 20px;
+        }
+
+        .nav-arrow.next {
+            right: 20px;
+        }
+
+        /* ARROW ICONS */
+        .nav-arrow.prev::before {
+            content: "←";
+        }
+
+        .nav-arrow.next::before {
+            content: "→";
+        }
+
+        /* DELETE BUTTON (X) */
+        .delete-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 59, 59, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 30;
+            opacity: 0;
+            transform: scale(0.8);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .slide:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .delete-btn:hover {
+            background: rgba(255, 0, 0, 1);
+            transform: scale(1.15);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            gap: 20px;
+        }
+
+        .empty-icon {
+            font-size: 6rem;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        .empty-text {
+            font-size: 2rem;
+            font-weight: 300;
+            background: linear-gradient(135deg, #fff, #a0a0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-25px); }
+        }
+
+        /* UPLOAD SECTION */
+        .upload-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .caption-input {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            width: 250px;
+            outline: none;
+        }
+
+        .caption-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .caption-input:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            padding: 0 10px;
+        }
+
+        .auto-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .counter {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* HIDDEN CLASS */
+        .hidden {
+            display: none !important;
+        }
+
+        /* TOAST NOTIFICATION */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .slideshow {
+                aspect-ratio: 16 / 9;
+            }
+            
+            .slide-caption {
+                font-size: 1rem;
+                padding: 8px 20px;
+                bottom: 15px;
+            }
+            
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .delete-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 1.2rem;
+            }
+            
+            .nav-arrow {
+                width: 45px;
+                height: 45px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- TITLE -->
+        <div class="title">✦ MY IT JOURNEY PORTFOLIO ✦</div>
+
+        <!-- MAIN SLIDESHOW -->
+        <div class="slideshow" id="slideshow">
+            <!-- NAVIGATION ARROWS -->
+            <button class="nav-arrow prev" id="prevBtn" title="Previous slide"></button>
+            <button class="nav-arrow next" id="nextBtn" title="Next slide"></button>
+            
+            <!-- SLIDE TRACK -->
+            <div class="slide-track" id="slideTrack"></div>
+            
+            <!-- EMPTY STATE -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">💻</div>
+                <div class="empty-text">code & create</div>
+            </div>
+        </div>
+
+        <!-- UPLOAD SECTION -->
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept="image/*" multiple>
+            <label for="fileInput" class="upload-btn">
+                <span>📸</span> add images
+            </label>
+            
+            <input type="text" id="captionInput" class="caption-input" placeholder="caption..." value="code & create">
+        </div>
+
+        <!-- STATUS BAR -->
+        <div class="status-bar">
+            <div class="auto-indicator">
+                <span class="pulse"></span>
+                <span>auto-sliding</span>
+            </div>
+            <div class="counter" id="counter">0 images</div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION (hidden by default) -->
+    <div id="toast" class="toast" style="display: none;"></div>
+
+    <script>
+        (function() {
+            // ========== DOM ELEMENTS ==========
+            const slideTrack = document.getElementById('slideTrack');
+            const emptyState = document.getElementById('emptyState');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const fileInput = document.getElementById('fileInput');
+            const captionInput = document.getElementById('captionInput');
+            const counter = document.getElementById('counter');
+            const toast = document.getElementById('toast');
+
+            // ========== STATE ==========
+            let images = [];
+            let currentIndex = 0;
+            let autoSlideInterval = null;
+            const STORAGE_KEY = 'autoSlideGallery';
+            const AUTO_SLIDE_INTERVAL = 4000; // 4 seconds
+
+            // ========== TOAST FUNCTION ==========
+            function showToast(message, duration = 2000) {
+                toast.textContent = message;
+                toast.style.display = 'block';
+                
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, duration);
+            }
+
+            // ========== LOAD FROM STORAGE ==========
+            function loadFromStorage() {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    try {
+                        images = JSON.parse(saved);
+                        images = images.filter(img => img && img.dataURL && img.caption);
+                    } catch (e) {
+                        console.error('Failed to load', e);
+                        images = [];
+                    }
+                } else {
+                    images = [];
+                }
+                
+                if (images.length > 0) {
+                    currentIndex = 0;
+                }
+                
+                updateDisplay();
+            }
+
+            // ========== SAVE TO STORAGE ==========
+            function saveToStorage() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
+                } catch (e) {
+                    console.error('Failed to save', e);
+                }
+            }
+
+            // ========== AUTO SLIDE CONTROL ==========
+            function startAutoSlide() {
+                stopAutoSlide();
+                if (images.length <= 1) return;
+                
+                autoSlideInterval = setInterval(() => {
+                    if (images.length > 0) {
+                        currentIndex = (currentIndex + 1) % images.length;
+                        updateSlidePosition();
+                        updateCounter();
+                    }
+                }, AUTO_SLIDE_INTERVAL);
+            }
+
+            function stopAutoSlide() {
+                if (autoSlideInterval) {
+                    clearInterval(autoSlideInterval);
+                    autoSlideInterval = null;
+                }
+            }
+
+            // ========== NAVIGATION FUNCTIONS ==========
+            function goToPrevSlide() {
+                if (images.length === 0) return;
+                currentIndex = (currentIndex - 1 + images.length) % images.length;
+                updateSlidePosition();
+                updateCounter();
+                // Restart auto-slide timer
+                startAutoSlide();
+            }
+
+            function goToNextSlide() {
+                if (images.length === 0) return;
+                currentIndex = (currentIndex + 1) % images.length;
+                updateSlidePosition();
+                updateCounter();
+                // Restart auto-slide timer
+                startAutoSlide();
+            }
+
+            // ========== RENDER SLIDES ==========
+            function renderSlides() {
+                if (!slideTrack) return;
+                
+                slideTrack.innerHTML = '';
+
+                if (images.length === 0) {
+                    slideTrack.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    prevBtn.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                    counter.textContent = '0 images';
+                    stopAutoSlide();
+                    return;
+                }
+
+                slideTrack.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+
+                // Create slides with delete buttons
+                images.forEach((img, index) => {
+                    const slide = document.createElement('div');
+                    slide.className = 'slide';
+                    slide.dataset.index = index;
+
+                    const image = document.createElement('img');
+                    image.src = img.dataURL;
+                    image.alt = `slide-${index}`;
+                    image.loading = 'lazy';
+
+                    const caption = document.createElement('div');
+                    caption.className = 'slide-caption';
+                    caption.textContent = img.caption || 'code & create';
+
+                    // DELETE BUTTON (X)
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.innerHTML = '✕';
+                    deleteBtn.setAttribute('aria-label', 'Delete image');
+                    
+                    // Add delete functionality
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteImage(index);
+                    });
+
+                    slide.appendChild(image);
+                    slide.appendChild(caption);
+                    slide.appendChild(deleteBtn);
+                    slideTrack.appendChild(slide);
+                });
+
+                updateSlidePosition();
+                updateCounter();
+                
+                // Start auto-sliding
+                if (images.length > 1) {
+                    startAutoSlide();
+                }
+            }
+
+            // ========== DELETE IMAGE FUNCTION ==========
+            function deleteImage(indexToDelete) {
+                if (indexToDelete < 0 || indexToDelete >= images.length) return;
+                
+                const deletedCaption = images[indexToDelete].caption || 'image';
+                
+                // Remove the image
+                images.splice(indexToDelete, 1);
+                
+                // Adjust current index if needed
+                if (images.length === 0) {
+                    currentIndex = 0;
+                    stopAutoSlide();
+                } else {
+                    if (indexToDelete < currentIndex) {
+                        currentIndex--;
+                    } else if (indexToDelete === currentIndex) {
+                        if (currentIndex >= images.length) {
+                            currentIndex = 0;
+                        }
+                    }
+                }
+                
+                updateDisplay();
+                showToast(`✨ ${deletedCaption} deleted`);
+            }
+
+            // ========== UPDATE SLIDE POSITION ==========
+            function updateSlidePosition() {
+                if (!slideTrack || images.length === 0) return;
+                const shift = -currentIndex * 100;
+                slideTrack.style.transform = `translateX(${shift}%)`;
+            }
+
+            // ========== UPDATE COUNTER ==========
+            function updateCounter() {
+                if (images.length === 0) {
+                    counter.textContent = '0 images';
+                } else {
+                    counter.textContent = `${currentIndex + 1} / ${images.length}`;
+                }
+            }
+
+            // ========== UPDATE DISPLAY ==========
+            function updateDisplay() {
+                renderSlides();
+                saveToStorage();
+            }
+
+            // ========== UPLOAD ==========
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                let caption = captionInput.value.trim();
+                if (caption === '') caption = 'code & create';
+
+                let loaded = 0;
+                const newImages = [];
+
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        newImages.push({
+                            dataURL: event.target.result,
+                            caption: caption
+                        });
+                        loaded++;
+                        
+                        if (loaded === files.length) {
+                            images = [...images, ...newImages];
+                            if (images.length > 0) {
+                                currentIndex = 0;
+                            }
+                            updateDisplay();
+                            showToast(`📸 ${files.length} image(s) added`);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                fileInput.value = '';
+            });
+
+            // ========== ARROW BUTTON EVENT LISTENERS ==========
+            prevBtn.addEventListener('click', goToPrevSlide);
+            nextBtn.addEventListener('click', goToNextSlide);
+
+            // ========== KEYBOARD SHORTCUTS ==========
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    goToPrevSlide();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    goToNextSlide();
+                } else if (e.key === 'Delete' && images.length > 0) {
+                    e.preventDefault();
+                    deleteImage(currentIndex);
+                } else if (e.key === 'c' && e.ctrlKey) {
+                    e.preventDefault();
+                    if (confirm('Clear all images?')) {
+                        images = [];
+                        currentIndex = 0;
+                        stopAutoSlide();
+                        updateDisplay();
+                        showToast('🗑️ all images cleared');
+                    }
+                }
+            });
+
+            // ========== INITIALIZE ==========
+            loadFromStorage();
+
+            // Save on page unload
+            window.addEventListener('pagehide', () => saveToStorage());
+        })();
+    </script>
+</body>
+</html>
